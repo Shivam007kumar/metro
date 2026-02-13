@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
     Easing,
@@ -14,12 +14,6 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-    isBleAdvertising,
-    isBleAvailable,
-    startAdvertising,
-    stopAdvertising,
-} from '../../src/services/bleAdvertiser';
 import useUserStore from '../../src/store/userStore';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -32,27 +26,19 @@ export default function PassScreen() {
     const balance = profile?.wallet_balance ?? 0;
     const isEnrolled = profile?.is_enrolled || false;
 
-    const [broadcasting, setBroadcasting] = useState(false);
-    const [bleAvailable, setBleAvailable] = useState(false);
-
     // Reanimated shared values for pulse
     const pulseScale = useSharedValue(1);
     const pulseOpacity = useSharedValue(0.6);
     const cardScale = useSharedValue(0.95);
 
-    // BLE broadcast pulse
-    const broadcastPulse = useSharedValue(1);
-
     useFocusEffect(
         useCallback(() => {
             refreshProfile();
-            setBleAvailable(isBleAvailable());
-            setBroadcasting(isBleAdvertising());
         }, [])
     );
 
     useEffect(() => {
-        // Continuous pulse
+        // Continuous pulse animation
         pulseScale.value = withRepeat(
             withSequence(
                 withTiming(1.4, { duration: 1200, easing: Easing.out(Easing.ease) }),
@@ -69,23 +55,10 @@ export default function PassScreen() {
             -1,
             false
         );
+
+        // Card entrance bounce
         cardScale.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.back(1.5)) });
     }, [isEnrolled]);
-
-    useEffect(() => {
-        if (broadcasting) {
-            broadcastPulse.value = withRepeat(
-                withSequence(
-                    withTiming(1.15, { duration: 800, easing: Easing.out(Easing.ease) }),
-                    withTiming(1, { duration: 800, easing: Easing.in(Easing.ease) })
-                ),
-                -1,
-                false
-            );
-        } else {
-            broadcastPulse.value = withTiming(1, { duration: 300 });
-        }
-    }, [broadcasting]);
 
     const pulseAnimStyle = useAnimatedStyle(() => ({
         transform: [{ scale: pulseScale.value }],
@@ -96,10 +69,6 @@ export default function PassScreen() {
         transform: [{ scale: cardScale.value }],
     }));
 
-    const broadcastBtnStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: broadcastPulse.value }],
-    }));
-
     const copyCypherId = async () => {
         if (!isEnrolled) {
             Alert.alert('Not Enrolled', 'Complete face enrollment first to get your Metro ID.');
@@ -107,31 +76,9 @@ export default function PassScreen() {
         }
         try {
             await Clipboard.setStringAsync(cypherId);
-            Alert.alert('Copied!', 'CypherID copied to clipboard');
+            Alert.alert('Copied!', 'CypherID copied to clipboard for nRF Connect');
         } catch {
             Alert.alert('Copy', cypherId);
-        }
-    };
-
-    const toggleBroadcast = async () => {
-        if (!isEnrolled) {
-            Alert.alert('Not Enrolled', 'Complete face enrollment to use BLE gate access.');
-            return;
-        }
-
-        if (broadcasting) {
-            await stopAdvertising();
-            setBroadcasting(false);
-        } else {
-            try {
-                await startAdvertising(cypherId);
-                setBroadcasting(true);
-            } catch (error) {
-                Alert.alert(
-                    'BLE Error',
-                    error.message || 'Could not start broadcasting. Make sure Bluetooth is on.'
-                );
-            }
         }
     };
 
@@ -149,28 +96,20 @@ export default function PassScreen() {
             </Animated.Text>
 
             <Animated.View style={[styles.card, cardAnimStyle]}>
-                {/* Status Pulse */}
+                {/* Status Pulse — smooth reanimated */}
                 <Animated.View
                     entering={FadeInDown.delay(200).duration(500)}
                     style={styles.statusContainer}
                 >
                     <Animated.View style={[styles.pulse, pulseAnimStyle, {
-                        backgroundColor: broadcasting
-                            ? 'rgba(59, 130, 246, 0.25)'
-                            : isEnrolled
-                                ? 'rgba(52, 211, 153, 0.25)'
-                                : 'rgba(251, 191, 36, 0.25)',
+                        backgroundColor: isEnrolled ? 'rgba(52, 211, 153, 0.25)' : 'rgba(251, 191, 36, 0.25)',
                     }]} />
                     <Animated.View style={[styles.dotOuter, {
-                        backgroundColor: broadcasting
-                            ? 'rgba(59, 130, 246, 0.15)'
-                            : isEnrolled
-                                ? 'rgba(52, 211, 153, 0.15)'
-                                : 'rgba(251, 191, 36, 0.15)',
+                        backgroundColor: isEnrolled ? 'rgba(52, 211, 153, 0.15)' : 'rgba(251, 191, 36, 0.15)',
                     }]}>
                         <View style={[styles.dot, {
-                            backgroundColor: broadcasting ? '#3B82F6' : statusColor,
-                            shadowColor: broadcasting ? '#3B82F6' : statusColor,
+                            backgroundColor: statusColor,
+                            shadowColor: statusColor,
                         }]} />
                     </Animated.View>
                 </Animated.View>
@@ -178,11 +117,11 @@ export default function PassScreen() {
                 <Animated.Text
                     entering={FadeIn.delay(400).duration(400)}
                     style={[styles.statusText, {
-                        color: broadcasting ? '#2563EB' : statusTextColor,
-                        backgroundColor: broadcasting ? '#DBEAFE' : statusBg,
+                        color: statusTextColor,
+                        backgroundColor: statusBg,
                     }]}
                 >
-                    {broadcasting ? '📡 BROADCASTING' : isEnrolled ? 'ACTIVE' : 'PENDING ENROLLMENT'}
+                    {isEnrolled ? 'ACTIVE' : 'PENDING ENROLLMENT'}
                 </Animated.Text>
 
                 <Animated.Text
@@ -203,37 +142,13 @@ export default function PassScreen() {
                     </Text>
                 </AnimatedTouchable>
 
-                {/* BLE Broadcast Button */}
                 {isEnrolled && (
-                    <Animated.View
-                        entering={FadeIn.delay(650).duration(400)}
-                        style={styles.bleSection}
+                    <Animated.Text
+                        entering={FadeIn.delay(700).duration(300)}
+                        style={styles.simulationHint}
                     >
-                        <AnimatedTouchable
-                            style={[
-                                styles.bleButton,
-                                broadcasting ? styles.bleButtonActive : styles.bleButtonInactive,
-                                broadcastBtnStyle,
-                            ]}
-                            onPress={toggleBroadcast}
-                            activeOpacity={0.8}
-                        >
-                            <Text style={[
-                                styles.bleButtonText,
-                                broadcasting ? styles.bleButtonTextActive : styles.bleButtonTextInactive,
-                            ]}>
-                                {broadcasting ? '📡 Stop Broadcasting' : '📡 Broadcast to Gate'}
-                            </Text>
-                        </AnimatedTouchable>
-
-                        <Text style={styles.bleHint}>
-                            {broadcasting
-                                ? 'Your phone is visible to metro gates'
-                                : bleAvailable
-                                    ? 'Tap to broadcast your ID to nearby gates'
-                                    : 'BLE not available — use copy method'}
-                        </Text>
-                    </Animated.View>
+                        Tap ID above to copy → paste in nRF Connect
+                    </Animated.Text>
                 )}
 
                 {/* Wallet */}
@@ -249,11 +164,7 @@ export default function PassScreen() {
                     entering={FadeIn.delay(850).duration(400)}
                     style={styles.hint}
                 >
-                    {broadcasting
-                        ? 'Walk up to the gate — it will detect you automatically'
-                        : isEnrolled
-                            ? 'Start broadcasting to enter metro gates'
-                            : 'Complete face enrollment to activate pass'}
+                    {isEnrolled ? 'Keep screen open at gate' : 'Complete face enrollment to activate pass'}
                 </Animated.Text>
             </Animated.View>
         </SafeAreaView>
@@ -347,45 +258,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#F9FAFB',
         borderColor: '#E5E7EB',
     },
-    bleSection: {
-        marginTop: 20,
-        alignItems: 'center',
-        width: '100%',
-    },
-    bleButton: {
-        paddingVertical: 14,
-        paddingHorizontal: 28,
-        borderRadius: 14,
-        width: '100%',
-        alignItems: 'center',
-    },
-    bleButtonActive: {
-        backgroundColor: '#3B82F6',
-        shadowColor: '#3B82F6',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    bleButtonInactive: {
-        backgroundColor: '#F0F4FF',
-        borderWidth: 1.5,
-        borderColor: '#DBEAFE',
-    },
-    bleButtonText: {
-        fontSize: 15,
-        fontWeight: '700',
-    },
-    bleButtonTextActive: {
-        color: '#FFFFFF',
-    },
-    bleButtonTextInactive: {
-        color: '#3B82F6',
-    },
-    bleHint: {
-        color: '#9CA3AF',
+    simulationHint: {
+        color: '#F59E0B',
         fontSize: 11,
+        fontWeight: '600',
         marginTop: 8,
+        marginBottom: 24,
         textAlign: 'center',
     },
     walletContainer: {
@@ -393,7 +271,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#F3F4F6',
         paddingTop: 20,
-        marginTop: 20,
+        marginTop: 16,
         width: '100%',
     },
     walletLabel: {
