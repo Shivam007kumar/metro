@@ -12,7 +12,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.metro.go",
       "infoPlist": {
-        "NSCameraUsageDescription": "Metro Go needs access to your camera for biometric enrollment."
+        "NSCameraUsageDescription": "Metro Go needs access to your camera for biometric enrollment.",
+        "NSBluetoothAlwaysUsageDescription": "Metro Go uses Bluetooth to communicate with metro gate terminals.",
+        "NSBluetoothPeripheralUsageDescription": "Metro Go broadcasts your pass ID to metro gates via Bluetooth."
       }
     },
     "android": {
@@ -25,7 +27,10 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.BLUETOOTH_ADVERTISE",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_SCAN"
       ],
       "package": "com.metro.go"
     },
