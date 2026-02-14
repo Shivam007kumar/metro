@@ -8,3 +8,4 @@ dlib
 chromadb
 python-dotenv
 supabase
+requests
