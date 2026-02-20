@@ -1,9 +1,9 @@
 import axios from 'axios';
 import useUserStore from '../store/userStore';
 
-// FIND YOUR LOCAL IP (e.g., 192.168.1.X)
-export const BASE_URL = 'http://192.168.0.181:8000';
-export const WS_URL = 'ws://192.168.0.181:8000';
+// Production API (HTTPS — works on any network)
+export const BASE_URL = 'https://api.shivam007.dev';
+export const WS_URL = 'wss://api.shivam007.dev';
 
 const client = axios.create({
   baseURL: BASE_URL,

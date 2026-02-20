@@ -2,7 +2,7 @@
 
 A contactless biometric entry/exit system for metro stations, featuring Face Recognition and Bluetooth Low Energy (BLE) beacon detection.
 
-![Metro Gate](https://img.shields.io/badge/Status-Prototype-green) ![Stack](https://img.shields.io/badge/Stack-Python_FastAPI_React_Native-blue)
+![Metro Gate](https://img.shields.io/badge/Status-Prototype-green) ![Stack](https://img.shields.io/badge/Stack-Python_FastAPI_React_Native-blue) [![Live Dashboard](https://img.shields.io/badge/Live_Dashboard-Vercel-black?logo=vercel)](https://metro-dashboard-eight.vercel.app/)
 
 ## 🌟 Features
 
@@ -126,13 +126,13 @@ cd backend
 uvicorn main:app --reload --port 8000
 ```
 
-### Terminal 2: Master Controller
-Real-time dashboard for station stats.
+### Terminal 2: Master Controller (Backend)
+Real-time stats API. (The UI is now hosted separately).
 ```bash
 # In project root
 uvicorn master:app --reload --port 8001
 ```
-👉 Open Dashboard: [http://localhost:8001/dashboard](http://localhost:8001/dashboard)
+👉 Open Live Dashboard: [https://metro-dashboard-eight.vercel.app/](https://metro-dashboard-eight.vercel.app/)
 
 ### Terminal 3: Gate Script (Entry/Exit)
 Simulates the physical gate hardware (Camera + BLE).

@@ -1,7 +1,7 @@
 import { useRootNavigationState, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, SlideInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../src/lib/supabase';
 import useUserStore from '../src/store/userStore';
@@ -20,6 +20,7 @@ export default function LoginScreen() {
     const { setSession, setProfile, user } = useUserStore();
 
     useEffect(() => {
+        // On mount, check if there's a valid session (cold start / app reopen)
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 setSession(session);
@@ -27,10 +28,18 @@ export default function LoginScreen() {
             }
         });
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session) {
+        // Listen for auth state changes.
+        // SIGNED_IN: user explicitly signed in
+        // INITIAL_SESSION: app cold-started with a persisted session
+        // SIGNED_OUT: user logged out
+        // We intentionally skip TOKEN_REFRESHED to prevent stale refresh
+        // tokens from re-creating a session after logout.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
                 setSession(session);
                 fetchProfile(session.user.id);
+            } else if (event === 'SIGNED_OUT') {
+                setSession(null);
             }
         });
 
@@ -88,37 +97,37 @@ export default function LoginScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle="dark-content" backgroundColor="#F0F4FF" />
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                     style={styles.content}
                 >
-                    {/* Branding — staggered fade-in from top */}
+                    {/* Branding — gentle fade-in */}
                     <View style={styles.header}>
                         <Animated.View
-                            entering={FadeInDown.delay(100).duration(600).springify()}
+                            entering={FadeIn.delay(100).duration(800)}
                             style={styles.logoBox}
                         >
                             <Text style={styles.logoEmoji}>🚇</Text>
                         </Animated.View>
                         <Animated.Text
-                            entering={FadeInDown.delay(250).duration(500)}
+                            entering={FadeIn.delay(300).duration(700)}
                             style={styles.title}
                         >
-                            Smart Metro Pass
+                            Metro Go
                         </Animated.Text>
                         <Animated.Text
-                            entering={FadeInDown.delay(400).duration(500)}
+                            entering={FadeIn.delay(500).duration(700)}
                             style={styles.subtitle}
                         >
                             Your seamless journey starts here.
                         </Animated.Text>
                     </View>
 
-                    {/* Form Card — slides up */}
+                    {/* Form Card — smooth slide up */}
                     <Animated.View
-                        entering={SlideInDown.delay(300).duration(700).springify().damping(18)}
+                        entering={SlideInUp.delay(400).duration(600)}
                         style={styles.formCard}
                     >
                         <Text style={styles.formTitle}>
@@ -129,7 +138,7 @@ export default function LoginScreen() {
                         </Text>
 
                         {isSignUp && (
-                            <Animated.View entering={FadeInUp.duration(300)}>
+                            <Animated.View entering={FadeInUp.duration(400)}>
                                 <Text style={styles.label}>Full Name</Text>
                                 <TextInput
                                     style={styles.input}
@@ -164,7 +173,7 @@ export default function LoginScreen() {
                         />
 
                         <AnimatedTouchable
-                            entering={FadeIn.delay(500).duration(400)}
+                            entering={FadeIn.delay(600).duration(500)}
                             style={[styles.button, loading && styles.buttonDisabled]}
                             onPress={handleAuth}
                             disabled={loading}
@@ -202,7 +211,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F0F4FF',
+        backgroundColor: '#FFFFFF',
     },
     content: {
         flex: 1,
@@ -211,7 +220,7 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: 'center',
-        marginBottom: 32,
+        marginBottom: 36,
     },
     logoBox: {
         width: 72,
@@ -221,11 +230,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
-        shadowColor: '#0056D2',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
     },
     logoEmoji: {
         fontSize: 36,
@@ -242,14 +246,11 @@ const styles = StyleSheet.create({
         color: '#6B7280',
     },
     formCard: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#F9FAFB',
         borderRadius: 20,
         padding: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 12,
-        elevation: 4,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
     formTitle: {
         fontSize: 20,
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
     },
     input: {
         height: 52,
-        backgroundColor: '#F9FAFB',
+        backgroundColor: '#FFFFFF',
         borderRadius: 12,
         paddingHorizontal: 16,
         fontSize: 16,
@@ -286,15 +287,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 24,
-        shadowColor: '#0056D2',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
     },
     buttonDisabled: {
         backgroundColor: '#93B8E8',
-        shadowOpacity: 0,
     },
     buttonText: {
         color: '#FFFFFF',
@@ -314,3 +309,4 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
 });
+

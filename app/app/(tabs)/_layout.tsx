@@ -1,32 +1,39 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
-    withSpring
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
 
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
     const scale = useSharedValue(focused ? 1.15 : 1);
     const translateY = useSharedValue(focused ? -2 : 0);
+    const dotOpacity = useSharedValue(focused ? 1 : 0);
 
     React.useEffect(() => {
-        scale.value = withSpring(focused ? 1.15 : 1, { damping: 12, stiffness: 200 });
-        translateY.value = withSpring(focused ? -2 : 0, { damping: 12, stiffness: 200 });
+        scale.value = withSpring(focused ? 1.15 : 1, { damping: 14, stiffness: 180 });
+        translateY.value = withSpring(focused ? -2 : 0, { damping: 14, stiffness: 180 });
+        dotOpacity.value = withTiming(focused ? 1 : 0, { duration: 250 });
     }, [focused]);
 
-    const animStyle = useAnimatedStyle(() => ({
+    const iconStyle = useAnimatedStyle(() => ({
         transform: [
             { scale: scale.value },
             { translateY: translateY.value },
         ],
     }));
 
+    const dotStyle = useAnimatedStyle(() => ({
+        opacity: dotOpacity.value,
+    }));
+
     return (
-        <Animated.View style={[styles.iconWrap, animStyle]}>
+        <Animated.View style={[styles.iconWrap, iconStyle]}>
             <Text style={styles.iconEmoji}>{emoji}</Text>
-            {focused && <View style={styles.activeDot} />}
+            <Animated.View style={[styles.activeDot, dotStyle]} />
         </Animated.View>
     );
 }
@@ -36,7 +43,7 @@ export default function TabLayout() {
         <Tabs
             screenOptions={{
                 headerShown: false,
-                tabBarActiveTintColor: '#0056D2',
+                tabBarActiveTintColor: '#2563EB',
                 tabBarInactiveTintColor: '#9CA3AF',
                 tabBarStyle: styles.tabBar,
                 tabBarLabelStyle: styles.tabLabel,
@@ -101,10 +108,10 @@ const styles = StyleSheet.create({
         fontSize: 22,
     },
     activeDot: {
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: '#0056D2',
+        width: 5,
+        height: 5,
+        borderRadius: 2.5,
+        backgroundColor: '#2563EB',
         marginTop: 3,
     },
 });

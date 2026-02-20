@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -31,8 +32,17 @@ export default function ProfileScreen() {
                 text: 'Logout',
                 style: 'destructive',
                 onPress: async () => {
-                    await supabase.auth.signOut();
+                    // 1. Clear Zustand state FIRST (prevents auth listener from re-setting session)
                     logout();
+                    // 2. Sign out from Supabase (clears internal session)
+                    await supabase.auth.signOut();
+                    // 3. Nuclear: clear any leftover Supabase keys from AsyncStorage
+                    try {
+                        const keys = await AsyncStorage.getAllKeys();
+                        const sbKeys = keys.filter(k => k.startsWith('sb-'));
+                        if (sbKeys.length > 0) await AsyncStorage.multiRemove(sbKeys);
+                    } catch (_) { }
+                    // 4. Navigate to login
                     router.replace('/');
                 },
             },
