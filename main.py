@@ -25,7 +25,7 @@ facerec = dlib.face_recognition_model_v1(f"{config.MODELS_DIR}/dlib_face_recogni
 
 print(f"⏳ Loading Database from {config.DB_PATH}...")
 client = chromadb.PersistentClient(path=config.DB_PATH)
-collection = client.get_collection(name="metro_faces")
+collection = client.get_or_create_collection(name="metro_faces")
 print(f"✅ System Online. Mode: {config.GATE_MODE}")
 
 # ================= 3. STATE MANAGEMENT =================
