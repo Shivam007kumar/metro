@@ -113,6 +113,12 @@ npx expo start
 ```
 - Scan the QR code with Expo Go (Android/iOS).
 
+### 5. Exposing Backend (Optional)
+To make your backend reachable from the internet (for the mobile app):
+```bash
+cloudflared tunnel run --url http://localhost:8000 backend
+```
+
 ---
 
 ## 🖥️ Running the System
@@ -140,6 +146,7 @@ Simulates the physical gate hardware (Camera + BLE).
 **To run Exit Gate:**
 ```bash
 # In project root
+source backend/venv/bin/activate
 python3 exit.py
 ```
 
@@ -147,6 +154,8 @@ python3 exit.py
 1. Edit `config.py`: Set `GATE_MODE = "ENTRY"`
 2. Run:
 ```bash
+# In project root
+source backend/venv/bin/activate
 python3 main.py
 ```
 

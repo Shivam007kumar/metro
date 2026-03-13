@@ -121,6 +121,7 @@ You will typically need **3 Terminal Windows** running simultaneously.
 Handles authentication, user management, and trip logic.
 ```bash
 cd backend
+source venv/bin/activate
 uvicorn main:app --reload --port 8000
 ```
 *Don't forget to run the `cloudflared` tunnel if you need external access!*
@@ -139,6 +140,7 @@ Simulates the physical gate hardware.
 **To run the Exit Gate:**
 ```bash
 # In project root
+source backend/venv/bin/activate
 python3 exit.py
 ```
 
@@ -146,6 +148,8 @@ python3 exit.py
 1.  Edit `config.py` and set `GATE_MODE = "ENTRY"`.
 2.  Run the script:
     ```bash
+    # In project root
+    source backend/venv/bin/activate
     python3 main.py
     ```
 
